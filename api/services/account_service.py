@@ -1,4 +1,5 @@
 import base64
+import json
 import logging
 import random
 import secrets
@@ -13,12 +14,22 @@ from werkzeug.exceptions import Unauthorized
 from configs import dify_config
 from constants.languages import language_timezone_mapping, languages
 from events.tenant_event import tenant_was_created
+from extensions.ext_database import db
 from extensions.ext_redis import redis_client
 from libs.helper import RateLimiter, TokenManager
 from libs.passport import PassportService
 from libs.password import compare_password, hash_password, valid_password
 from libs.rsa import generate_key_pair
-from models.account import *
+from models.account import (
+    Account,
+    AccountIntegrate,
+    AccountStatus,
+    Tenant,
+    TenantAccountJoin,
+    TenantAccountJoinRole,
+    TenantAccountRole,
+    TenantStatus,
+)
 from models.model import DifySetup
 from services.errors.account import (
     AccountAlreadyInTenantError,
@@ -93,7 +104,7 @@ class AccountService:
         return token
 
     @staticmethod
-    def authenticate(email: str, password: str, invite_token: str = None) -> Account:
+    def authenticate(email: str, password: str, invite_token: str | None = None) -> Account:
         """authenticate account with email and password"""
 
         account = Account.query.filter_by(email=email).first()
@@ -497,7 +508,7 @@ class TenantService:
         return tenant
 
     @staticmethod
-    def switch_tenant(account: Account, tenant_id: int = None) -> None:
+    def switch_tenant(account: Account, tenant_id: Optional[int] = None) -> None:
         """Switch the current workspace for the account"""
 
         # Ensure tenant_id is provided

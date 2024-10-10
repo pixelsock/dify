@@ -94,7 +94,7 @@ class WorkflowToolManageService:
         description: str,
         parameters: list[dict],
         privacy_policy: str = "",
-        labels: list[str] = None,
+        labels: Optional[list[str]] = None,
     ) -> dict:
         """
         Update a workflow tool.

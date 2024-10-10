@@ -60,7 +60,11 @@ class TokenBufferMemory:
         # instead of all messages from the conversation, we only need to extract messages
         # that belong to the thread of last message
         thread_messages = extract_thread_messages(messages)
-        thread_messages.pop(0)
+
+        # for newly created message, its answer is temporarily empty, we don't need to add it to memory
+        if thread_messages and not thread_messages[-1].answer:
+            thread_messages.pop()
+
         messages = list(reversed(thread_messages))
 
         prompt_messages = []
